@@ -124,9 +124,23 @@ func (conf HadoopConf) Namenodes() []string {
 
 	keys := make([]string, 0, len(nns))
 	for k, _ := range nns {
-		keys = append(keys, k)
+		keys = append(keys, conf.resolveVar(k))
 	}
 
 	sort.Strings(keys)
 	return keys
 }
+
+// resolve variables in property value
+func (conf HadoopConf) resolveVar(v string) string {
+	for {
+		if strings.Index(v, "${") < 0 {
+			return v
+		}
+		vname := v[strings.Index(v, "${")+2 : strings.Index(v, "}")]
+		vval := conf[vname]
+		v = strings.ReplaceAll(v, fmt.Sprintf("${%s}", vname), vval)
+	}
+	return v
+}
+
